@@ -10,7 +10,7 @@ def select_directory():
     root = Tk()
     root.withdraw()  # 隐藏主窗口
     directory = filedialog.askdirectory()  # 弹出选择文件夹对话框
-    return directory
+    return directory #返回的是一个字符串
 
 def select_file():
     '''
@@ -19,7 +19,7 @@ def select_file():
     root = Tk()
     root.withdraw()  # 隐藏主窗口
     file = filedialog.askopenfilename()  # 弹出选择文件对话框
-    return file
+    return file #返回的是一个字符串
 
 def get_files_with_extension(directory, extension):
     """
