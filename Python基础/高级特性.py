@@ -67,8 +67,8 @@ def fun04():
     G=(range(1,100))#生成器内部只有数据的一种表达式因此生成器占用较少的内存
     for i in G:
         print(i)
-
     return
+
 L=list(range(100))
 fun01(L)
 fun02(L)
