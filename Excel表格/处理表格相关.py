@@ -29,6 +29,8 @@ print(df)
 print(df.head())  # 查看前5行
 print(df.tail())  # 查看后5行
 print(df.shape)   # 查看DataFrame的形状（行数, 列数）
+print(df.shape[0]) # 行数
+print(df.shape[1]) # 列数
 print(df.columns) # 查看列名
 print(df.info())  # 查看DataFrame的基本信息
 print(df.describe())  # 查看数据的统计信息
@@ -54,3 +56,14 @@ df['Name'] = df['Name'].str.upper()  # 转换字符串为大写
 #print(df.groupby('City').mean())  # 按城市分组并计算平均值
 #print(df['Age'].mean())  # 计算年龄的平均值
 print(df['Age'].sum())   # 计算年龄的总和
+
+
+'''
+pandas 的 apply 方法用于沿着 DataFrame 或 Series 的轴（行或列）应用函数。
+对于 DataFrame，apply 可以对每列（默认）或每行应用指定的函数。 
+apply 是非常灵活的，可以用来执行各种自定义操作。
+'''
+print(df.head())
+df['Age'] = df['Age'].apply(lambda x: x + 1)  # 对年龄加1
+df['City'] = df['City'].apply(lambda x: x.upper())  # 城市名称转换为大写
+print(df.head())
