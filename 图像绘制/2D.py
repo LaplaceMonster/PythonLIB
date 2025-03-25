@@ -32,3 +32,4 @@ plt.legend()
 
 # 显示图形
 plt.show()
+plt.savefig("picture", dpi=300)  # 保存为 PNG 格式，300 dpi，确保清晰
