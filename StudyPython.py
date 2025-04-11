@@ -1,82 +1,66 @@
-import os
+from scipy.optimize import fsolve
+import math
 from tkinter import filedialog
-import pandas as pd
-import matplotlib.pyplot as plt
+def bruggeman(eps_water, eps_oil, vol_frac_water, eps_guess=10):
+    """
+    使用 Bruggeman 模型计算水-油混合物的等效介电常数。
+    
+    参数：
+    eps_water : 水的介电常数（高介电）
+    eps_oil   : 油的介电常数（低介电）
+    vol_frac_water : 水的体积分数（0 到 1 之间）
+    eps_guess : 初始猜测值，默认为 10
+    
+    返回：
+    等效介电常数（float）
+    """
+    if not 0 <= vol_frac_water <= 1:
+        raise ValueError("水的体积分数必须在 0 到 1 之间。")
 
-# 解决中文乱码问题
-plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['axes.unicode_minus'] = False
+    equation = lambda eps_eff: (
+        vol_frac_water * (eps_water - eps_eff) / (eps_water + 2 * eps_eff) +
+        (1 - vol_frac_water) * (eps_oil - eps_eff) / (eps_oil + 2 * eps_eff)
+    )
 
+    eps_eff_solution = fsolve(equation, eps_guess)
+    return eps_eff_solution[0]
 
-def generate_picture(fileName):
-    filename_suffix = os.path.basename(fileName)  # 获取带后缀文件名
-    sheetName = os.path.splitext(filename_suffix)[0]  # 获取文件名
-    print(f"正在处理文件--->{sheetName}")
-    # 读取数据
-    data = pd.read_excel(fileName, sheet_name=sheetName)
+def S21_MAG(Dielectric_constant,Loss_tangent,length,Fre=2.45e9):
+    '''
+    计算传播损耗/动态范围 使用S21来表征 S21=10*lg(Pout/Pin)  此列中默认Pin为1mW(0dBm)
+    Dielectric_constant:介电常数
+    Loss_tangent:介电损耗正切
+    length:微波的传播距离
+    Fre=2.45e9:频率默认为2.45GHz
+    '''
+    lambda1=3e8/Fre  #波长=光速/频率
+    #损耗系数计算
+    Pin=1
+    alpha=(math.pi/lambda1)*math.sqrt(Dielectric_constant/2*(math.sqrt(1+Loss_tangent**2)-1))
+    Pout=Pin*math.exp(-2*alpha*length) #输出功率
+    return 10*math.log10(Pout/Pin) #S21计算
+def S21_PHA(Dielectric_constant,length,Fre=2.45e9):
+    '''
+    计算透射待测物质后相位差（相对于真空下）
+    即S21的相位信息。
+    '''
+    lambda_cur=3e8/Fre
+    return 360*length/lambda_cur*math.sqrt(Dielectric_constant)
 
-    ## **1️⃣ 选出数值列，不影响文本列**
-    num_cols = ['日产液量', '日产油量', '日产水量', '日含水率', '日产气量', '生产时间']  # 只转换这些列
-    data[num_cols] = data[num_cols].apply(pd.to_numeric, errors='coerce')
+eps_water = 82 # 水的介电常数
+eps_oil = 2.5    # 油的介电常数
 
-    # **2️⃣ 只删除数值列中有 NaN 的行**
-    data = data.dropna(subset=num_cols)
+loss_water = 0.25 # 水的损耗正切
+loss_oil = 0.0008  # 油的损耗正切
 
-    # **3️⃣ 确保数据不为空**
-    if data.empty:
-        raise ValueError("❌ 数据清洗后为空，请检查 Excel 文件格式！")
+S21_water = S21_MAG(eps_water, loss_water, 0.05)*2  # 水的 S21
+S21_oil = S21_MAG(eps_oil, loss_oil, 0.05)*2  # 油的 S21
 
-    # 处理日期列
-    data['日期'] = pd.to_datetime(data['日期'])
-    data = data.sort_values(by='日期', ascending=True)  # 按时间升序排列
+print(f"水的 S21: {S21_water:.2f} dB")
+print(f"油的 S21: {S21_oil:.4f} dB")
 
-    # 提取数据
-    x = data['日期']
-    y1 = data['日产液量']
-    y2 = data['日产油量']
-    y3 = data['日产水量']
-    y5 = data['日产气量']
+S21_PHA_water = S21_PHA(eps_water, 0.05)  # 水的相位差
+S21_PHA_oil = S21_PHA(2.5, 0.05)  # 油的相位差
 
-    # 创建一个画布，包含 1 行 2 列的 2 个子图
-    fig, axes = plt.subplots(1, 2, figsize=(16, 8.94))
-
-    # **子图1：日产液量、日产油量、日产水量**
-    axes[0].plot(x, y1, label="日产液量", color="blue", linestyle="-", linewidth=2)
-    axes[0].plot(x, y2, label="日产油量", color="red", linestyle="-", linewidth=2)
-    axes[0].plot(x, y3, label="日产水量", color="green", linestyle="-", linewidth=2)
-    axes[0].set_title(r"产液量/m$^3$ 产油量/t 产水量/m$^3$", fontsize=15)
-    axes[0].set_xlabel("日期", fontsize=13)
-    axes[0].set_ylabel("产量", fontsize=13)
-    axes[0].grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-    axes[0].legend()
-
-    # **子图2：日产气量**
-    axes[1].plot(x, y5, label="产气量", color="orange", linestyle="-", linewidth=2)
-    axes[1].set_title(r"产气量/Nm$^3$", fontsize=15)
-    axes[1].set_xlabel("日期", fontsize=13)
-    axes[1].set_ylabel("气量/Nm$^3$", fontsize=13)
-    axes[1].grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-    axes[1].legend()
-
-    # 自动调整子图间距，避免重叠
-    plt.tight_layout()
-
-    # 设置总标题并调整字体大小
-    fig.suptitle(sheetName + "设备计量情况", fontsize=20, fontweight='bold')
-
-    # 预留空间，避免总标题被覆盖
-    plt.tight_layout(rect=[0, 0, 1, 0.96])  
-
-    # 保存图像到文件
-    fileDir=os.path.dirname(fileName)  # 获取文件路径
-    picturName = fileDir+"/"+sheetName+'.png'  # 保存路径及文件名
-    plt.savefig(picturName, dpi=300)  # 保存为 PNG 格式，300 dpi，确保清晰
-
-    # 显示图形
-    plt.show()
-
-    print(f"图像已保存为：{picturName}")
-# 选择文件
-files= filedialog.askopenfilenames(title="选择需要处理的文件", filetypes=[("Excel文件", "*.xlsx"), ("所有文件", "*.*")])
-for file in files:
-    generate_picture(file)
+print(f"水的相位差: {S21_PHA_water:.2f} °")
+print(f"油的相位差: {S21_PHA_oil:.2f} °")
