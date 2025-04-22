@@ -1,6 +1,7 @@
 from scipy.optimize import fsolve
 import math
 from tkinter import filedialog
+import numpy as np
 def bruggeman(eps_water, eps_oil, vol_frac_water, eps_guess=10):
     """
     使用 Bruggeman 模型计算水-油混合物的等效介电常数。
@@ -38,8 +39,8 @@ def S21_MAG(Dielectric_constant,Loss_tangent,length,Fre=2.45e9):
     Pin=1
     alpha=(math.pi/lambda1)*math.sqrt(Dielectric_constant/2*(math.sqrt(1+Loss_tangent**2)-1))
     Pout=Pin*math.exp(-2*alpha*length) #输出功率
-    return 10*math.log10(Pout/Pin) #S21计算
-def S21_PHA(Dielectric_constant,length,Fre=2.45e9):
+    return 10*math.log10(Pout/Pin)*2 #S21计算
+def S21_PHS(Dielectric_constant,length,Fre=2.45e9):
     '''
     计算透射待测物质后相位差（相对于真空下）
     即S21的相位信息。
@@ -47,20 +48,46 @@ def S21_PHA(Dielectric_constant,length,Fre=2.45e9):
     lambda_cur=3e8/Fre
     return 360*length/lambda_cur*math.sqrt(Dielectric_constant)
 
-eps_water = 82 # 水的介电常数
-eps_oil = 2.5    # 油的介电常数
+def DebyeModel(Eps,EpsH,Relationtime,Fre=2.45e9):
+    W=math.pi*Fre*2
+    Relationtime *= 1e-12 
+    Re=EpsH+((Eps-EpsH)/(1+W**2*Relationtime**2))
+    Im=(Eps-EpsH)*W*Relationtime/(1+W**2*Relationtime**2)
+    Loss_tangent=Im/Re
+    return Re,Im,Loss_tangent
 
-loss_water = 0.25 # 水的损耗正切
-loss_oil = 0.0008  # 油的损耗正切
 
-S21_water = S21_MAG(eps_water, loss_water, 0.05)*2  # 水的 S21
-S21_oil = S21_MAG(eps_oil, loss_oil, 0.05)*2  # 油的 S21
+oil_dielectric_constant = 2.5  # 油的介电常数
+oil_loss_tangent = 0.002  # 油的损耗正切
 
-print(f"水的 S21: {S21_water:.2f} dB")
-print(f"油的 S21: {S21_oil:.4f} dB")
+t = np.arange(0, 31, 1)  # 温度0——60度
 
-S21_PHA_water = S21_PHA(eps_water, 0.05)  # 水的相位差
-S21_PHA_oil = S21_PHA(2.5, 0.05)  # 油的相位差
+Dielectric_constant_t = t*t*-0.001532 - 0.1839*t + 82.72
+loss_t = t*t*0.00005715 - 0.006453*t + 0.2451
 
-print(f"水的相位差: {S21_PHA_water:.2f} °")
-print(f"油的相位差: {S21_PHA_oil:.2f} °")
+Water_content = np.arange(0, 1.1, 0.1)  # 水的体积分数
+
+for j in t:#温度的循环
+    for i in Water_content:#h水的体积分数循环
+    
+        eps_water = Dielectric_constant_t[j]# 水的介电常数
+        eps_oil = oil_dielectric_constant# 油的介电常数
+        vol_frac_water = i# 水的体积分数
+        eps_guess = 10# 介电常数初始猜测值
+        eps_eff = bruggeman(eps_water, eps_oil, vol_frac_water, eps_guess)
+        
+        loss_water = loss_t[j]
+        loss_oil = oil_loss_tangent
+        loss_guess = 0.01  # 损耗正切初始猜测值
+        loss_tangent = bruggeman(loss_water, loss_oil, vol_frac_water,loss_guess )
+        
+        # 计算 S21 的相位和幅度
+        length = 0.05  # 假设传播距离为 0.1 米
+        s21_phase = S21_PHS(eps_eff, length)
+        s21_magnitude = S21_MAG(eps_eff, loss_tangent, length)
+        
+        print(f" 温度: {j}°C,水的体积分数: {i:.1f}, 等效介电常数: {eps_eff:.2f}, "
+              f"损耗正切: {loss_tangent:.4f}, S21 相位: {s21_phase:.2f}°, "
+              f"S21 幅度: {s21_magnitude:.2f} dB")
+
+
