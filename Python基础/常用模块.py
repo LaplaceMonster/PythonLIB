@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta #该模块包含一个datetime类，这个类使我们要用的时间相关的函数更加简单
+from datetime import datetime, timedelta #该模块包含一个datetime类，
+#这个类使我们要用的时间相关的函数更加简单
 now = datetime.now() #获取当前时间
 print(now)
 dt = datetime(2015, 4, 19, 12, 20) # 用指定日期时间创建datetime
