@@ -15,6 +15,13 @@ Line2D、Patch、Text（元素）：构成图形的基本组件，如线条、�
 # 解决中文显示问题
 plt.rcParams['font.sans-serif'] = ['SimHei']  # 使用黑体
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+
+'''
+python绘制2D图像非常简单 只需要三步
+1 X轴数据
+2 Y轴数据（二者数据长度需要一致）
+3 调用matplotlib.pyplot.plot()函数绘制图像
+'''
 # 生成数据
 x = numpy.linspace(0, 10, 100)
 y = numpy.sin(x)
@@ -27,9 +34,9 @@ plt.title("正弦函数")
 plt.xlabel("x 轴")
 plt.ylabel("y 轴")
 
-# 显示图例
-plt.legend()
-
+# 显示图例:在图中添加曲线的名称
+plt.legend(loc='upper right')  # loc参数可以指定图例的位置，如'upper right', 'lower left'等
+plt.grid(True)  # 添加网格线
 # 显示图形
 plt.show()
-plt.savefig("picture", dpi=300)  # 保存为 PNG 格式，300 dpi，确保清晰
+#plt.savefig("picture", dpi=300)  # 保存为 PNG 格式，300 dpi，确保清晰
