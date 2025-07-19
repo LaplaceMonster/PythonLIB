@@ -1,12 +1,104 @@
 # Python学习日志
 
+## Python基础学习
+
+### 函数参数
+
+函数中的默认参数必须要在非默认参数的后面否则会报错
+
+使用`*args` 可以接受任意数量的位置参数 在使用当成元组即可
+
+使用`**kwargs`可以接受任意数量的关键字参数 使用时当成字典即可
+
+使用`*args` 和`**kwargs`可以同时使用
+
+```
+def func01(*args,**kwargs):
+    for i, arg in enumerate(args):
+        print(f"位置参数{i}：{arg}")
+    for key, value in kwargs.items():
+        print(f"关键字参数{key}：{value}")
+func01(1,2,3, a=4, b=5, c=6) #位置参数和关键字参数同时使用
+
+func01执行结果
+位置参数0：1
+位置参数1：2
+位置参数2：3
+关键字参数a：4
+关键字参数b：5
+关键字参数c：6
+```
+
+其中`enumerate(args)`:`enumerate()` 是一个内置函数，用来**在遍历可迭代对象（如列表、字符串等）时，\**同时获得\**每个元素的索引和值**。
+
+items():是字典中的**返回的是键值对的可迭代对象**，非常适合用来遍历字典时**同时获得键和值**。
+
+
+
+当我们调用一个Python文件或者Python实现的执行文件时 ，会想其他文件执行一样会给这个程序传入参数，可以使用内置的sys模块中的`sys.argv`
+
+```
+for i, arg in enumerate(sys.argv): #同时获得参数的索引和值
+        print(f"参数{i}：{arg}")
+        
+使用系统调用 python my_script.py hello 123
+执行结果：
+参数1：filepath/my_script.py
+参数2：hello
+参数3：123
+```
+
+通过这种形式我们可以很方便的调用Python程序，比如我们使用C++基于QT库开发但是 C++导入一些库或者功能很不方便，我们可以使用Python来实现对应的功能然后使用C++来调用Python程序即可。
+
+### 装饰器
+
+装饰器是Python中强大的功能可以再不改变原函数的情况下修改函数功能
+
+```
+import sys
+import time
+def decorator(func):
+    def wrapper(*args, **kwargs):
+        print(f"函数名：{func.__name__}")
+        start_time = time.time()
+        result=func(*args, **kwargs)
+        end_time = time.time()
+        print(f"执行时间：{end_time - start_time:.8f}秒")
+        return result
+
+
+@decorator
+def func01(*args,**kwargs):
+    for i, arg in enumerate(args):
+        print(f"位置参数{i}：{arg}")
+    for key, value in kwargs.items():
+        print(f"关键字参数{key}：{value}")
+
+if __name__ == "__main__":
+    func01(1,2,3, a=4, b=5, c=6) #位置参数和关键字参数同时使用
+  
+执行结果:  
+函数名：func01
+位置参数0：1
+位置参数1：2
+位置参数2：3
+关键字参数a：4
+关键字参数b：5
+关键字参数c：6
+执行时间：0.00036073秒
+```
+
+
+
 ## Excel表格/`CSV`
 
 `DataFrame` 是 Pandas 中用于存储**表格数据**的主要数据结构，它类似于一个二维数组，可以轻松地进行各种数据操作，如排序、筛选、汇总、填充缺失值等。
 
 ### `DataFrame`对象
 
-#### DataFrame.apply(func, axis=0, raw=False, result_type=None, args=(), **kwds)
+```
+DataFrame.apply(func, axis=0, raw=False, result_type=None, args=(), **kwds)
+```
 
 ##### 参数说明：
 
@@ -163,8 +255,6 @@ plt.show()
  ✅ **高度自定义**：几乎每个元素都可以自定义，如颜色、大小、样式、布局等。
  ✅ **Web 集成**：可以将图表嵌入到网页或 Jupyter Notebook 中，方便展示和分享。
  ✅ **支持在线和离线绘图**：可以在浏览器中生成图表，也支持离线渲染。
-
-## 人工智能
 
 ## 机器学习
 
