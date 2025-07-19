@@ -1,109 +1,60 @@
-import os
-import sys
-import time
-import mmap
 import socket
-import multiprocessing
-import ctypes
-from multiprocessing import Process, Pipe, Queue, Value, Array, Lock, Manager
+import sys
+import os
+import json
+from multiprocessing import Process
+'''
+进程间通信示例
+使用 socket 实现简单的客户端和服务器通信
+客户端发送 JSON 数据，服务器接收并解析
+'''
 
-import win32pipe, win32file, pywintypes
+def server(name,port):
+    print(f"函数:{server.__name__}---- {name} --->启动")
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #AF_INET表示使用 IPv4，SOCK_STREAM 表示使用 TCP 协议
+    server_socket.bind(('localhost', port)) # 绑定到本地地址和端口
+    server_socket.listen(1)
+    print("服务器已启动，等待连接...")
 
-PIPE_NAME = r'\\.\pipe\MyPipe'  # 与 Qt 中服务端一致的命名管道名称
+    conn, addr = server_socket.accept()
+    print(f"客户端连接来自: {addr}")
 
-def named_pipe_client():
-    """
-    Python命名管道客户端，连接Qt服务端命名管道并进行通信。
-    """
+    data = conn.recv(1024).decode('utf-8')
+    print(f"接收到数据: {data}")
+
     try:
-        print("Connecting to pipe...")
-        # 等待服务端创建好管道
-        time.sleep(1)  # 可根据实际情况调整
+        json_data = json.loads(data)
+        print(f"解析后的数据: {json_data}")
+    except json.JSONDecodeError as e:
+        print(f"JSON 解析错误: {e}")
 
-        # 连接到命名管道（需要服务端已运行）
-        handle = win32file.CreateFile(
-            PIPE_NAME,
-            win32file.GENERIC_READ | win32file.GENERIC_WRITE,
-            0, None,
-            win32file.OPEN_EXISTING,
-            0, None
-        )
+    conn.close()
+    server_socket.close()
+def client(name,port):
+    print(f"函数:{server.__name__}---- {name} --->启动")
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect(('localhost', port))
 
-        # 发送消息到Qt服务端
-        message = b"Hello from Python pipe client"
-        win32file.WriteFile(handle, message)
-        print("Sent:", message.decode())
+    data = {
+        "name": "Alice",
+        "age": 25,
+        "hobbies": ["reading", "traveling"]
+    }
+    json_data = json.dumps(data)
+    
+    client_socket.sendall(json_data.encode('utf-8'))
+    print(f"发送数据: {json_data}")
 
-        # 读取Qt服务端返回的数据
-        result, data = win32file.ReadFile(handle, 4096)
-        print("Received:", data.decode())
+    client_socket.close()
 
-        # 关闭连接
-        win32file.CloseHandle(handle)
 
-    except pywintypes.error as e:
-        print("Pipe connection error:", e)
 
-SHARED_MEM_FILE = "shared_mem.dat"
-MEM_SIZE = 1024
 
-def read_shared_memory():
-    """
-    读取 Qt 服务端写入的共享内存文件内容。
-    """
-    # 确保文件已由 Qt 服务端创建
-    if not os.path.exists(SHARED_MEM_FILE):
-        print("Shared memory file not found.")
-        return
 
-    with open(SHARED_MEM_FILE, "r+b") as f:
-        # 映射整个共享内存区域
-        mm = mmap.mmap(f.fileno(), MEM_SIZE, access=mmap.ACCESS_READ)
 
-        # 读取数据
-        mm.seek(0)
-        raw = mm.read(MEM_SIZE)
-        message = raw.split(b'\x00', 1)[0].decode(errors='ignore')
-        print("Received from shared memory:", message)
 
-        mm.close()
-
-HOST = '127.0.0.1'  # Qt 服务端监听的地址
-PORT = 12828       # Qt 服务端监听的端口
-
-HOST = '127.0.0.1'   # 本机地址
-PORT = 12828         # 目标端口
-
-def socket_client():
-    """
-    TCP 客户端：连接本地 Qt TCP 服务端，交互式发送并接收数据。
-    """
-    try:
-        time.sleep(1)  # 延时，确保服务端已启动
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            print(f"[INFO] Connecting to {HOST}:{PORT}...")
-            s.connect((HOST, PORT))
-            print("[INFO] Connected. Type your messages below (type 'exit' to quit):")
-
-            while True:
-                message = input(">>> ").strip()
-                if message.lower() in {"exit", "quit"}:
-                    print("[INFO] Exiting.")
-                    break
-
-                if not message:
-                    continue
-
-                s.sendall(message.encode())
-
-                data = s.recv(1024)
-                print("[RECV]", data.decode())
-
-    except ConnectionRefusedError:
-        print("[ERROR] Connection refused. Make sure Qt server is running.")
-    except Exception as e:
-        print(f"[ERROR] {e}")
-
-if __name__ == "__main__":
-    socket_client()
+if __name__=='__main__':
+    master_process = Process(target=server, args=(name:="主进程",port:=12828))
+    master_process.start()
+    slave_process = Process(target=client, args=(name:="子进程", port:=12828))
+    slave_process.start()
