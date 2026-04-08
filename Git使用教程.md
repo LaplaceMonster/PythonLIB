@@ -114,7 +114,7 @@ git push -u origin main  # 或者 master，取决于你的默认分支
 cd /path/to/your/repo         # 进入你的本地仓库
 git status                    # 查看修改的文件
 git add .                     # 添加所有修改的文件到暂存区
-git commit -m "Updated files" # 提交更改
+git commit -m "Updated files" # 提交更改*******提交到当前的分支
 git pull origin main          # 拉取远程仓库的最新更改
 git push origin main          # 将本地更改推送到远程仓库
 
@@ -132,3 +132,29 @@ git clone GitHub_repo
 git checkout main   #确保你在本地仓库的主分支上
 git pull origin main  #从远程仓库拉取最新的更改
 ```
+
+## 创建本地创建新的git仓库并同步到GitHub
+
+```
+1在本地文件创建文件夹，文件夹的名字就是仓库名字，在文件夹下输入：
+git init
+2 可以添加文件，通过
+git add . #添加所有文件到仓库
+git commit -m "创建仓库"
+git branch -M main #在本地创建主分支
+3在GitHub上需要创建一个同名的空仓库
+git remote add origin https://github.com/你的用户名/你的仓库名.git #同步到GitHub上的
+git push -u origin main #把本地的仓库的内容推送到GitHub上面去
+```
+
+创建一个develop分支
+
+```
+# 1. 创建分支（但仍停留在原分支）
+git branch develop
+# 2. 切换到新分支
+git checkout develop
+# 或使用新命令
+git switch develop
+```
+
